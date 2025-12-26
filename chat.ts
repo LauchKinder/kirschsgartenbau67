@@ -10,8 +10,11 @@ export default async function handler(req: Request) {
   }
 
   const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "API_KEY ist nicht in den Vercel-Umgebungsvariablen gesetzt." }), { 
+  
+  if (!apiKey || apiKey.trim() === "") {
+    return new Response(JSON.stringify({ 
+      error: "API_KEY fehlt in den Vercel-Einstellungen." 
+    }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -19,13 +22,8 @@ export default async function handler(req: Request) {
 
   try {
     const { messages } = await req.json();
-    if (!messages || !Array.isArray(messages)) {
-      throw new Error("Ungültiges Nachrichten-Format");
-    }
-
     const ai = new GoogleGenAI({ apiKey });
     
-    // Konvertierung der Rollen für Gemini
     const contents = messages.map((m: any) => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.text }]
@@ -65,8 +63,7 @@ export default async function handler(req: Request) {
       } 
     });
   } catch (error: any) {
-    console.error("API Error:", error);
-    return new Response(JSON.stringify({ error: error.message || "Interner Fehler" }), { 
+    return new Response(JSON.stringify({ error: error.message }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
