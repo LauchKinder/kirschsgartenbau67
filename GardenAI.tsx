@@ -61,7 +61,7 @@ const GardenAI: React.FC = () => {
       }
     } catch (e: any) {
       setError(e.message);
-      setMessages(prev => [...prev, { role: 'model', text: 'Entschuldigung, ich habe gerade Schwierigkeiten. Bitte nutzen Sie das Kontaktformular.' }]);
+      setMessages(prev => [...prev, { role: 'model', text: 'Der Chat ist vorübergehend nicht erreichbar.' }]);
     } finally {
       setIsLoading(false);
     }
