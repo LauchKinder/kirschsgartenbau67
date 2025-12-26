@@ -13,7 +13,7 @@ export default async function handler(req: Request) {
   
   if (!apiKey || apiKey.trim() === "") {
     return new Response(JSON.stringify({ 
-      error: "API_KEY fehlt in den Vercel-Einstellungen." 
+      error: "API_KEY fehlt in den Vercel Environment Variables." 
     }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
