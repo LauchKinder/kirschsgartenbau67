@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, Loader2, Sparkles } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { ChatMessage } from './types';
 
 const GardenAI: React.FC = () => {
@@ -9,6 +9,7 @@ const GardenAI: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -20,6 +21,7 @@ const GardenAI: React.FC = () => {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     
+    setError(null);
     const userMsg = input.trim();
     setInput('');
     const newMsgs: ChatMessage[] = [...messages, { role: 'user', text: userMsg }];
@@ -27,6 +29,7 @@ const GardenAI: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // WICHTIG: Absoluter Pfad für Vercel API
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,7 +37,8 @@ const GardenAI: React.FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error(`Fehler: ${res.status}`);
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server meldet Status ${res.status}`);
       }
 
       const reader = res.body?.getReader();
@@ -56,9 +60,10 @@ const GardenAI: React.FC = () => {
           });
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Chat Error:", e);
-      setMessages(prev => [...prev, { role: 'model', text: 'Entschuldigung, ich habe gerade Verbindungsschwierigkeiten. Bitte versuchen Sie es später erneut oder nutzen Sie das Kontaktformular.' }]);
+      setError(e.message);
+      setMessages(prev => [...prev, { role: 'model', text: 'Verbindung fehlgeschlagen. Bitte prüfen Sie, ob der API_KEY in Vercel hinterlegt ist.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -97,10 +102,15 @@ const GardenAI: React.FC = () => {
                 </div>
               </div>
             ))}
+            {error && (
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-[10px] flex items-center gap-2 border border-red-100">
+                <AlertCircle size={14} /> {error}
+              </div>
+            )}
           </div>
 
           <div className="p-4 bg-white border-t border-slate-100">
-            <div className="flex gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500 transition-all">
+            <div className="flex gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200 focus-within:border-green-500 transition-all">
               <input 
                 type="text" 
                 value={input} 
@@ -112,13 +122,13 @@ const GardenAI: React.FC = () => {
               <button 
                 onClick={handleSend} 
                 disabled={isLoading || !input.trim()}
-                className="p-3 bg-slate-900 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:hover:bg-slate-900 transition-all active:scale-95"
+                className="p-3 bg-slate-900 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 transition-all active:scale-95"
               >
                 {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : <Send size={18} />}
               </button>
             </div>
-            <p className="text-[9px] text-center text-slate-400 mt-3 flex items-center justify-center gap-1">
-              <Sparkles size={10} /> Powered by Kirschs Gartenbau AI
+            <p className="text-[9px] text-center text-slate-400 mt-3 flex items-center justify-center gap-1 uppercase tracking-wider font-bold">
+              <Sparkles size={10} /> Kirschs Gartenbau AI
             </p>
           </div>
         </div>
